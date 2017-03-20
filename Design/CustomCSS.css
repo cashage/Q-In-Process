@@ -1,0 +1,12 @@
+Alignborder{
+border-style: groove;
+border-width: 2px;
+background-color : powderblue ;
+
+}
+
+defineHeight {
+    height: 100px;
+    width: 500px;
+    background-color: powderblue;
+}
