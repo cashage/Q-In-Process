@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Queue in Process</title>
+    <link href="Design/bootstrap.css" rel="stylesheet" />
+    <style>
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 60px;
+            height: 60px;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+            margin-left: 500px;
+        }
+
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        body  {
+    background-image: url("Images/32654666113_26d09b05a3_k.jpg");
+    background-color: #cccccc;
+}
+    </style>
+</head>
+<body  style="padding-left:120px ;padding-top:50px">
+    <div class="col-md-10 offset-md-1">
+        <div class="well">
+            <table class="table table-bordered">
+                <thead>
+                    <tr class="success">
+                        <th colspan="2">
+                            <b style="font-size:25px">Login</b>
+                            <a class="btn btn-success pull-right" style="width:150px" id="RedirectRegister" href="RegistrationPage.html">Register</a>
+                        </th>
+                        <!--<td colspan="2">
+                            <input type="button" class="btn btn-success" id="loginbtn" value="Login">
+                        </td>-->
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Useranme</td>
+                        <td>
+                            <input type="text" id="usrname" placeholder="Username">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Password</td>
+                        <td>
+                            <input type="password" id="pwd" placeholder="Password">
+                        </td>
+                    </tr>
+
+                    <tr class="success">
+                        <td colspan="2">
+                            <input id="btnlogin" class="btn btn-success" type="button" value="Login" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <!--<div class="modal fade" tabindex="-1" id="modalpopup" data-keyboard="false" data-backdrop="static">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">
+                                &times;
+                            </button>
+                            <h4>Success</h4>
+                        </div>
+                        <div class="modal-body">
+                            <h2 style="padding-left:260px"> Registration successful !!!  </h2>
+                        </div>
+                        <div class="modal-footer">
+
+                            <button type="button" class="btn btn-success" data-dismiss="modal"> Close</button>
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>-->
+            <div id="diverror" class="alert alert-danger collapse">
+                <a id="linkclose" class="close" href="#">&times;</a>
+                <div id="diverrortext"></div>
+
+            </div>
+            <div class="hidden loader" id="loaderdiv"></div>
+        </div>
+    </div>
+    <script src="Scripts/jquery-3.1.1.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            $('#btnlogin').click(function () {
+                $('#loaderdiv').removeClass('hidden');
+                $.ajax({
+
+                    url: '/token',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: {
+                        grant_type: 'password',
+                        username: $("#usrname").val(),
+                        password: $("#pwd").val(),
+                        response_type: 'token'
+                    },
+                    success: function (response) {
+                        $('#loaderdiv').addClass('hidden');
+                        sessionStorage.setItem('accesstoken', response.access_token)
+                        sessionStorage.setItem('userName', response.userName)
+                        window.location.href = "QandA.html"
+                    },
+                    error: function (jqXHR) {
+                        $('#loaderdiv').addClass('hidden')
+                        $("#diverrortext").text(jqXHR.responseText);
+                        $("#diverror").show('fade')
+                    }
+
+
+                })
+
+                //$("#modalpopup").modal("show");
+                //$("#usrname").val;
+                //$("#pwd").val;
+                //$("#modalpopup").modal("Show")
+            })
+            $("#linkclose").click(function () {
+                $("#diverror").hide("fade")
+            });
+        })
+
+    </script>
+
+
+</body>
+</html>

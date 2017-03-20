@@ -1,0 +1,443 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Queue in Process</title>
+    <link href="Design/bootstrap.css" rel="stylesheet" />
+    <style>
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 60px;
+            height: 60px;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+            margin-left: 500px;
+        }
+
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-default success">
+            <div class="container-fluid">
+                <div class="navbar-header" ">
+                    <img src="Images/part-loads-waiting-time.png" alt="QinProcess" style="width:70px;height:70px;float:left">
+                    <p style="float:right"><font face="verdana" size="50px" color="green">Queue In<b>Process...</b></font></p>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div class="container">
+        <div class="well">
+            <span id="usernamefield" class="text-muted"> </span>
+            <input type="button" class="btn btn-success pull-right" id="logout" value="LogOut" />
+            <textarea type="text" id="quesbox" style="height:100px;width:1100px" placeholder="Enter you Question here"> </textarea>
+            <input type="button" class="btn btn-success" id="postData" value="POST" />
+        </div>
+        <div id="loadingQueries" class="well">
+            <!--<input  type="button" class="btn btn-success pull-right hidden" id="refreshQueries" value="Refresh" />-->
+            <input type="button" class="btn btn-success"  id="LoadQueries" value="Load Queries / Refresh" />
+
+        </div>
+        <div class="hidden loader" id="loaderdiv"></div>
+        <div id="allQueries" class="well hidden">
+            <table class="table table-bordered">
+                <thead>
+                    <tr style="background-color:#5CB764">
+                        <th>ID</th>
+                        <th>Query</th>
+                        <th ></th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"> </tbody>
+            </table>
+            <div class="modal fade" tabindex="-1" id="sessionModalpopup" data-keyboard="false" data-backdrop="static">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">
+                                &times;
+                            </button>
+                            <h4>Session Expired!!!!</h4>
+                        </div>
+                        <div class="modal-body">
+                            <h2>Please close this to login again  </h2>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" data-dismiss="modal"> Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal fade" tabindex="-1" id="answermodalpopup" data-keyboard="false" data-backdrop="static">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" id="modalClose" class="close" data-dismiss="modal">
+                                &times;
+                            </button>
+                            <h4>Type your answer in the space provided below</h4>
+                        </div>
+                        <div class="modal-body">
+                            <textarea type="text" id="answerbox" style="height:100px;width:860px" placeholder="Enter you Question here"> </textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="postAnswermodal" class="btn btn-success" > Post Answer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="diverror" class="alert alert-danger collapse">
+                <a id="linkclose" class="close" href="#">&times;</a>
+                <div id="diverrortext"></div>
+
+            </div>
+        </div>
+    </div>
+    <script src="Scripts/jquery-3.1.1.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var mappedID=0;
+            var serialNumber = 1;
+            var currentpage = 1;
+
+            $(window).scroll(function () {
+                if ($(window).scrollTop() == $(document).height() - $(window).height())
+                {
+                    currentpage +=1;
+                    loaddata(currentpage);
+                }
+
+            })
+
+            function loaddata(currentpage) {
+               
+                $.ajax({
+                    type: 'GET',
+                    url: 'api/GetAllQueries',
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('accesstoken')
+                    },
+                    data: { pagenumber: currentpage },
+                    success: function (data) {
+                        //alert(sessionStorage.getItem('accesstoken'));
+                       // $('#loaderdiv').addClass('hidden');
+                        //$('#tableBody').empty();
+                        // $("#modalpopup").modal("show");
+                        // $('#LoadQueries').addClass('hidden');
+                       // $('#allQueries').removeClass('hidden');
+
+                        var queries = [];
+
+                        $.each(data, function (index, value) {
+
+                            if (value.IsAnswer == 0) {
+                                queries.push(value);
+                            }
+                        })
+                        $.each(queries, function (index, value) {
+                            var row = $('<tr><td><b>' + serialNumber + '</b></td><td><b>'
+                                       + addNewlines(value.Query) + '</b></td><td>'
+                                        + '<input type="button" id="answerQuery" onclick="answeerClick()" class="btn btn-success"  value="Reply to Query"><p class="hidden">' + value.Id + '</p></input>'
+                                       //+ '<button type="button" id="answerQuery" class="btn btn-success" data-dismiss="modal"> Close</button>'
+                                       + '</td><tr>'
+                                )
+                            $('#tableBody').append(row);
+                            $.each(data, function (index, value1) {
+                                if (value.Id == value1.MappedId) {
+                                    var row = $('<tr><td>' + 'Reply' + '</td><td>'
+                                               + addNewlines(value1.Query) + '</td><td>'
+
+                                        )
+                                    $('#tableBody').append(row);
+                                }
+                            })
+                            serialNumber += 1;
+                        })
+                    },
+                    error: function (jqXHR) {
+                        $('#loaderdiv').addClass('hidden')
+                        if (jqXHR.status == "401") {
+                            sessionStorage.removeItem('userName');
+                            alert(jqXHR.responseText);
+                            window.location.href = "LoginPage.html";
+                        }
+                        else {
+                            $("#diverrortext").text(jqXHR.responseText);
+                            $("#diverror").show('fade')
+                        }
+                    }
+
+
+                })
+
+            }
+
+            if (sessionStorage.getItem('accesstoken') == null) {
+                window.location.href = 'LoginPage.html';
+            }
+
+            $('#usernamefield').text('Hello  ' + sessionStorage.getItem('userName'))
+
+            //$.ajax({
+            //    type: 'GET',
+            //    url: '/api/account/register',
+            //    Header: {
+            //        'Authorization': 'Bearer ' + sessionStorage.getItem['accesstoken']
+            //    },
+            //    success: function (data) {
+            //        // $("#modalpopup").modal("show");
+            //        $.each(data, function (index, value) {
+
+            //        })
+            //    },
+            //    error: function (jqXHR) {
+            //        $("#diverrortext").text(jqXHR.responseText);
+            //        $("#diverror").show('fade')
+            //    }
+            //})
+
+            $('#logout').click(function () {
+                sessionStorage.removeItem('accesstoken');
+                sessionStorage.removeItem('userName');
+                window.location.href = 'LoginPage.html';
+
+            })
+
+
+            $('#postData').click(function () {
+                $.ajax({
+                    type: 'POST',
+                    url: 'api/GetAllQueries',
+                    data: {
+                        Query: quesbox.value,
+                        MappedId: '0',
+                        IsAnswer: '0',
+                        IsDeleted: '0'
+                    },
+                    success: function (data) {
+                        // $("#modalpopup").modal("show");
+                        alert("Your Query has been successfully posted!!!");
+                    },
+                    error: function (jqXHR) {
+                        $("#diverrortext").text(jqXHR.responseText);
+                        $("#diverror").show('fade')
+                    }
+
+                })
+            })
+
+            $('#postAnswermodal').click(function () {
+
+                if (answerbox.value.trim().length == 0) {
+                    alert('Please provide a valid answer');
+                }
+                else {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'api/GetAllQueries',
+                        data: {
+                            Query: answerbox.value,
+                            MappedId: mappedID,
+                            IsAnswer: '1',
+                            IsDeleted: '0'
+                        },
+                        success: function (data) {
+                            // $("#modalpopup").modal("show");
+                            alert("Your reply has been successfully posted!!!  Please reload .");
+                            $("#answermodalpopup").modal("hide");
+                        },
+                        error: function (jqXHR) {
+                            $("#diverrortext").text(jqXHR.responseText);
+                            $("#diverror").show('fade')
+                        }
+                    })
+                }
+            })
+
+            $('#sessionModalpopup').on('hidden.bs.modal', function () {
+                window.location.href = 'LoginPage.html';
+            })
+
+            function addNewlines(str) {
+                var result = '';
+                while (str.length > 0) {
+                    result += str.substring(0, 100) + '\n';
+                    str = str.substring(100);
+                }
+                return result;
+            }
+
+            $('#LoadQueries').click(function () {
+                serialNumber=1
+                $('#loaderdiv').removeClass('hidden');
+                $('#refreshQueries').removeClass('hidden')
+                $.ajax({
+                    type: 'GET',
+                    url: 'api/GetAllQueries',
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('accesstoken')
+                    },
+                    success: function (data) {
+                        //alert(sessionStorage.getItem('accesstoken'));
+                        $('#loaderdiv').addClass('hidden');
+                        $('#tableBody').empty();
+                        // $("#modalpopup").modal("show");
+                        // $('#LoadQueries').addClass('hidden');
+                        $('#allQueries').removeClass('hidden');
+
+                        var queries = [];
+
+                        $.each(data, function (index, value) {
+
+                            if (value.IsAnswer == 0) {
+                                queries.push(value);
+                            }
+                        })
+                        $.each(queries, function (index, value) {
+                            //var str = value.Query;
+                            //function addNewlines(str) {
+                            //    var result = '';
+                            //    while (str.length > 0) {
+                            //        result += str.substring(0, 200) + '\n';
+                            //        str = str.substring(200);
+                            //    }
+                            //    return result;
+                            //}
+
+                            var row = $('<tr><td><b>' + serialNumber + '</b></td><td><b>'
+                                       + addNewlines(value.Query) + '</b></td><td>'
+                                       + '<input type="button" id="answerQuery" onclick="answeerClick()" class="btn btn-success"  value="Reply to Query"><p class="hidden">'+value.Id+'</p></input>'
+                                       //+ '<button type="button" id="answerQuery" class="btn btn-success" data-dismiss="modal"> Close</button>'
+                                       + '</td><tr>'
+                                )
+                            $('#tableBody').append(row);
+                            $.each(data, function (index, value1) {
+                                if (value.Id == value1.MappedId) {
+
+                                    var row = $('<tr><td>' +'Reply'  + '</td><td>'
+                                               + addNewlines(value1.Query) + '</td><td>'
+
+                                        )
+                                    $('#tableBody').append(row);
+                                }
+
+                            })
+                            serialNumber += 1;
+                        })
+                        //$.each(data, function (index, value) {
+                        //    var row = $('<tr><td>' + index + '</td><td>'
+                        //               + value.Query + '</td><td>'
+                        //               + '<input type="button" class="btn btn-success" id="answerBtn" value="Answer Query" />'
+                        //               + '</td><tr>'
+                        //        )
+                        //    $('#tableBody').append(row);
+
+                        //})
+
+
+                    },
+                    error: function (jqXHR) {
+                        $('#loaderdiv').addClass('hidden')
+                        if (jqXHR.status == "401") {
+                            sessionStorage.removeItem('userName');
+                            alert(jqXHR.responseText);
+                            window.location.href = "LoginPage.html";
+                        }
+                        else {
+                            $("#diverrortext").text(jqXHR.responseText);
+                            $("#diverror").show('fade')
+                        }
+                    }
+
+
+                })
+
+            })
+
+            $('#tableBody').on('click', '#answerQuery', function () {
+                mappedID = this.nextSibling.innerText;
+                $("#answermodalpopup").modal("show");
+            })
+
+        });
+
+    </script>
+    <!--<div>
+        <form>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Email address</label>
+                <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Email">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputPassword1">Password</label>
+                <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+            </div>
+
+
+            <button type="submit" class="btn btn-default">Submit</button>
+        </form>
+    </div>-->
+    <!--<div style="padding-top: 90px ">
+        <div class="container">
+
+            <div class="jumbotron" style=" border: groove 0.5px; background-color: #e6faff">
+                <button type="button" id="registerBtn" style="float:right;padding-top:2px;padding-top:5px;width:160px ; font-size:18px" class="btn btn-default"> Register yourself</button>
+                <form>
+                    <div class="form-group" style="margin-top:25px">
+                        <label for="exampleInputEmail1">UserName</label>
+                        <input type="text" class="form-control" id="exampleInputEmail1" placeholder="Username">
+                    </div>
+                    <div class="form-group">
+                        <label for="exampleInputPassword1">Password</label>
+                        <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+                    </div>
+
+
+                    <button type="submit" id="loginButton" style="font-size:15px ;width:100px" class="glyphicon glyphicon-home  btn btn-default"> Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="alertDiv" style="background-color: #ff8566;padding-top:10px" hidden="hidden">-->
+    <!--Unauthorized!!!!
+    </div>
+    <script>
+        $(document).ready(function () {
+            var logbtn = $("#loginButton");
+            logbtn.click(function () {
+                $("#alertDiv").text("car")
+
+            })
+
+        })
+    </script>-->
+
+</body>
+</html>
